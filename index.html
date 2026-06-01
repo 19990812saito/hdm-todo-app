@@ -158,6 +158,7 @@ h2{font-size:28px;line-height:1.2;margin:3px 0 4px}
 .task h4{font-size:17px;margin:0 0 4px}
 .task p{margin:0;color:var(--muted);font-size:13px;line-height:1.55}
 .badges{display:flex;gap:6px;flex-wrap:wrap}
+.status-strip{margin-bottom:12px}
 .badge{
   display:inline-flex;
   align-items:center;
@@ -398,21 +399,61 @@ textarea{min-height:88px;resize:vertical}
 .mobile-tabs{display:none}
 @media (max-width:900px){
   .app{display:block}
-  .side{position:relative;height:auto;padding:16px}
+  body{background:#f3f7fb}
+  .side{position:relative;height:auto;padding:13px 14px 10px}
+  .brand{font-size:11px}
+  .side h1{font-size:22px;line-height:1.08;margin:3px 0 8px}
+  .side h1 br{display:none}
+  .side-card{display:none}
   .nav{display:none}
-  .main{padding:14px}
-  .topbar{display:grid}
-  .actions{justify-content:flex-start}
+  .main{padding:10px}
+  .topbar{display:grid;gap:10px;margin-bottom:10px}
+  .kicker{font-size:11px}
+  h2{font-size:24px;margin:1px 0}
+  .sub{font-size:13px;line-height:1.45}
+  .actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    justify-content:stretch;
+  }
+  .actions .btn{padding:11px 10px}
+  #exportBtn{display:none}
+  #newTaskBtn{grid-column:auto}
+  .status-strip{margin-bottom:8px}
+  .status-strip .badge{font-size:11px;padding:4px 7px}
+  .goal-box{gap:8px;margin-bottom:10px}
+  .goal-box .goal:first-child{display:none}
+  .goal{padding:12px}
+  .goal b{font-size:15px}
+  .goal p{font-size:13px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .grid.cols-4,.grid.cols-3,.people,.goal-box,.detail-grid,.form-grid{grid-template-columns:1fr}
-  .gantt-grid{min-width:980px;grid-template-columns:112px repeat(var(--days), minmax(31px,1fr))}
-  .gantt-owner{min-height:136px}
-  .gantt-lane{min-height:136px}
-  .gantt-bar{font-size:12px}
+  .gantt-panel{border-radius:10px}
+  .gantt-head{display:grid;gap:10px;padding:13px 12px}
+  .gantt-head h3{font-size:22px;line-height:1.25}
+  .gantt-controls{display:grid;grid-template-columns:1fr 70px}
+  .gantt-controls input{width:100%;font-size:18px;padding:10px 11px}
+  .gantt-scroll{max-height:60vh}
+  .gantt-grid{min-width:860px;grid-template-columns:104px repeat(var(--days), minmax(28px,1fr))}
+  .gantt-corner{padding:9px 8px}
+  .gantt-day{min-height:38px;font-size:12px}
+  .gantt-owner{min-height:126px;padding:10px 8px;font-size:18px;line-height:1.2}
+  .gantt-owner span{font-size:12px;line-height:1.35}
+  .gantt-lane{min-height:126px}
+  .gantt-bar{height:24px;top:calc(9px + var(--lane) * 26px);font-size:13px;padding:0 7px}
+  .gantt-bar small{font-size:12px}
+  .grid.cols-4{gap:8px;margin-top:10px}
+  .stat .num{font-size:28px}
+  .section-title{margin:16px 0 8px}
   .mobile-tabs{
     display:flex;
     gap:6px;
     overflow:auto;
-    padding:10px 0;
+    padding:8px 0 10px;
+    position:sticky;
+    top:0;
+    z-index:10;
+    background:#f3f7fb;
   }
   .mobile-tabs button{
     white-space:nowrap;
@@ -423,6 +464,20 @@ textarea{min-height:88px;resize:vertical}
     font-weight:900;
   }
   .mobile-tabs button.active{background:var(--navy);color:#fff}
+  .modal-backdrop{align-items:flex-end;padding:0}
+  .modal{
+    width:100%;
+    max-height:94vh;
+    border-radius:14px 14px 0 0;
+  }
+  .modal-head{padding:14px}
+  .modal-head h3{font-size:18px}
+  .modal-body{padding:14px}
+  input,select,textarea{font-size:16px;padding:12px;min-height:46px}
+  textarea{min-height:96px}
+  .task{padding:12px}
+  .task-head{display:grid}
+  .task-actions{display:grid;grid-template-columns:1fr 1fr}
 }
 </style>
 </head>
@@ -919,7 +974,7 @@ function renderMonthTimeline(){
 function renderDashboard(){
   const urgent = monthTasks().filter(t => t.status !== "done" && dateDiff(t.due) <= 5).sort((a,b)=>a.due.localeCompare(b.due));
   document.getElementById("view-dashboard").innerHTML = `
-    <div class="badges" style="margin-bottom:12px">
+    <div class="badges status-strip">
       <span class="badge green" id="cloudStatus">${escapeHtml(cloudStatus)}</span>
       <span class="badge">公開URL対応</span>
       <span class="badge">Supabase保存</span>
