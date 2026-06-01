@@ -97,6 +97,7 @@ h2{font-size:28px;line-height:1.2;margin:3px 0 4px}
   color:#fff;
   font-weight:900;
 }
+.btn:disabled{opacity:.55;cursor:not-allowed}
 .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line)}
 .btn.green{background:var(--green)}
 .btn.red{background:var(--red)}
@@ -312,6 +313,38 @@ h2{font-size:28px;line-height:1.2;margin:3px 0 4px}
   color:var(--muted);
   font-weight:800;
 }
+.field-panel{
+  margin-bottom:14px;
+  display:grid;
+  grid-template-columns:minmax(220px,.8fr) 1fr;
+  gap:12px;
+  align-items:start;
+}
+.field-user{
+  display:grid;
+  gap:8px;
+}
+.field-user strong{font-size:18px}
+.field-user select{
+  min-height:42px;
+  font-weight:900;
+}
+.field-actions{
+  display:grid;
+  grid-template-columns:1.4fr 120px 1fr auto;
+  gap:8px;
+  align-items:end;
+}
+.field-actions textarea{
+  min-height:42px;
+  height:42px;
+}
+.quick-tasks{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  margin-top:8px;
+}
 .ai-list{display:grid;gap:10px}
 .ai-card{
   border:1px solid var(--line);
@@ -433,6 +466,17 @@ textarea{min-height:88px;resize:vertical}
   .status-strip{margin-bottom:8px}
   .status-strip .badge{font-size:11px;padding:4px 7px}
   .goal-box{gap:8px;margin-bottom:10px}
+  .field-panel{
+    grid-template-columns:1fr;
+    padding:12px;
+  }
+  .field-actions{
+    grid-template-columns:1fr;
+  }
+  .field-actions textarea{
+    height:auto;
+    min-height:76px;
+  }
   .goal-box .goal:first-child{display:none}
   .goal{padding:12px}
   .goal b{font-size:15px}
@@ -544,7 +588,8 @@ textarea{min-height:88px;resize:vertical}
 
 <script>
 const STORAGE_KEY = "hdm-todo-v1";
-const APP_VERSION = "v0.4.1";
+const USER_STORAGE_KEY = "hdm-todo-current-user";
+const APP_VERSION = "v0.5.0";
 const APP_RELEASE_DATE = "2026-06-01";
 const SUPABASE_URL = "https://rojisasppxraywbfdszo.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Jo6mbRUsR1cb5MqqH2iJ8Q_YbrFAepi";
@@ -564,6 +609,11 @@ const ownerMeta = {
   "伊江さん": {className:"owner-ie", color:"#11845b"},
   "廣瀬さん": {className:"owner-hirose", color:"#b75e00"},
   "全員": {className:"owner-all", color:"#58677a"}
+};
+const userProfiles = {
+  "齊藤": {role:"管理者", note:"全タスク編集・目標編集・管理確認"},
+  "伊江さん": {role:"現場メンバー", note:"担当タスクの進捗・ログ入力"},
+  "廣瀬さん": {role:"現場メンバー", note:"担当タスクの進捗・ログ入力"}
 };
 const statusLabels = {todo:"未着手", doing:"進行中", blocked:"相談必要", done:"完了"};
 const priorityLabels = {high:"高", normal:"中", low:"低"};
@@ -637,6 +687,7 @@ let selectedMonth = todayISO().slice(0,7);
 let cloudStatus = IS_FILE_ORIGIN ? "公開URLで同期" : "ローカル保存";
 let cloudSaveTimer;
 let lastCloudUpdatedAt = "";
+let currentUser = loadCurrentUser();
 
 function load(){
   const raw = localStorage.getItem(STORAGE_KEY);
@@ -658,13 +709,40 @@ function normalizeState(data){
       owner:normalizeName(t.owner),
       start,
       due,
-      logs:(t.logs || []).map(l => ({...l, by:normalizeName(l.by)}))
+      logs:(t.logs || []).map(l => ({
+        ...l,
+        date:l.date || l.at || todayISO(),
+        type:l.type || "進捗",
+        by:normalizeName(l.by)
+      }))
     };
   });
   return data;
 }
 function normalizeName(name){
   return nameAliases[name] || name;
+}
+function loadCurrentUser(){
+  const saved = normalizeName(localStorage.getItem(USER_STORAGE_KEY) || "齊藤");
+  return userProfiles[saved] ? saved : "齊藤";
+}
+function setCurrentUser(name){
+  currentUser = normalizeName(name);
+  localStorage.setItem(USER_STORAGE_KEY, currentUser);
+  render();
+}
+function currentRole(){
+  return userProfiles[currentUser]?.role || "現場メンバー";
+}
+function canManage(){
+  return currentUser === "齊藤";
+}
+function canTouchTask(task){
+  return canManage() || task.owner === currentUser || task.owner === "全員";
+}
+function requireManager(){
+  alert("この操作は齊藤（管理者）のみ編集できます。現場メンバーは担当タスクの進捗・ログ入力をお願いします。");
+  return false;
 }
 function save(){
   state = normalizeState(state);
@@ -989,6 +1067,36 @@ function renderMonthTimeline(){
     </div>
   </div>`;
 }
+function myActionTasks(){
+  return monthTasks()
+    .filter(t => t.status !== "done" && (t.owner === currentUser || t.owner === "全員" || canManage()))
+    .sort((a,b) => a.due.localeCompare(b.due))
+    .slice(0,8);
+}
+function renderFieldInputPanel(){
+  const tasks = myActionTasks();
+  const options = tasks.map(t => `<option value="${t.id}">${escapeHtml(t.due.slice(5))} ${escapeHtml(t.title)}</option>`).join("");
+  const quick = tasks.slice(0,4).map(t => `<button class="btn secondary small" onclick="openLog('${t.id}')">${escapeHtml(t.title)}</button>`).join("");
+  return `<div class="panel field-panel">
+    <div class="field-user">
+      <span class="badge ${canManage() ? "blue" : "green"}">${escapeHtml(currentRole())}</span>
+      <strong>${escapeHtml(currentUser)}で入力中</strong>
+      <select id="currentUserSelect" onchange="setCurrentUser(this.value)">
+        ${Object.keys(userProfiles).map(p=>`<option value="${p}" ${currentUser===p?"selected":""}>${p} / ${userProfiles[p].role}</option>`).join("")}
+      </select>
+      <p class="sub">${escapeHtml(userProfiles[currentUser]?.note || "")}</p>
+    </div>
+    <div>
+      <div class="field-actions">
+        <label>担当タスク<select id="quickTaskId">${options || `<option value="">今日入力できるタスクなし</option>`}</select></label>
+        <label>進捗<input id="quickProgressValue" type="number" min="0" max="100" step="5" value="25"></label>
+        <label>ログ<textarea id="quickLogText" placeholder="今日やったこと・相談・完了報告"></textarea></label>
+        <button class="btn green" onclick="saveQuickLogFromDashboard()" ${tasks.length ? "" : "disabled"}>現場ログ保存</button>
+      </div>
+      <div class="quick-tasks">${quick || `<span class="badge">担当タスクなし</span>`}</div>
+    </div>
+  </div>`;
+}
 function renderDashboard(){
   const urgent = monthTasks().filter(t => t.status !== "done" && dateDiff(t.due) <= 5).sort((a,b)=>a.due.localeCompare(b.due));
   document.getElementById("view-dashboard").innerHTML = `
@@ -998,6 +1106,7 @@ function renderDashboard(){
       <span class="badge">Supabase保存</span>
       <span class="badge blue">${APP_VERSION}</span>
     </div>
+    ${renderFieldInputPanel()}
     <div class="goal-box">
       <div class="goal"><b>年間目標</b><p>${escapeHtml(state.goals.year)}</p></div>
       <div class="goal"><b>${monthLabel(selectedMonth)}目標</b><p>${escapeHtml(currentMonthGoal())}</p></div>
@@ -1099,6 +1208,12 @@ function render(){
   renderNav();
   const versionEl = document.getElementById("appVersionLabel");
   if(versionEl) versionEl.textContent = `${APP_VERSION} / ${APP_RELEASE_DATE}`;
+  const newTaskBtn = document.getElementById("newTaskBtn");
+  if(newTaskBtn){
+    newTaskBtn.textContent = canManage() ? "タスク追加" : "タスク追加（管理者）";
+    newTaskBtn.classList.toggle("secondary", !canManage());
+    newTaskBtn.classList.toggle("green", canManage());
+  }
   if(currentView === "dashboard") renderDashboard();
   if(currentView === "tasks") renderTasks();
   if(currentView === "ai") renderAi();
@@ -1107,6 +1222,7 @@ function render(){
   if(currentView === "settings") renderSettings();
 }
 function saveGoals(){
+  if(!canManage()) return requireManager();
   const goalMonth = document.getElementById("goalMonth").value || selectedMonth;
   selectedMonth = goalMonth;
   state.goals.year = document.getElementById("yearGoal").value;
@@ -1123,6 +1239,7 @@ function openModal(title, html){
 }
 function closeModal(){ document.getElementById("modal").classList.remove("show"); }
 function openNewTask(){
+  if(!canManage()) return requireManager();
   openModal("タスク追加", taskForm());
   document.getElementById("saveTask").onclick = () => saveTask();
 }
@@ -1142,6 +1259,7 @@ function taskForm(t = {}){
   </div>`;
 }
 function saveTask(id){
+  if(!canManage()) return requireManager();
   const data = {
     title: document.getElementById("taskTitle").value.trim(),
     owner: document.getElementById("taskOwner").value,
@@ -1168,9 +1286,10 @@ function saveTask(id){
 function openTask(id){
   const t = state.tasks.find(x => x.id === id);
   if(!t) return;
+  const canEdit = canManage();
   openModal(t.title, `<div class="detail-grid">
     <div>
-      ${taskForm(t)}
+      ${canEdit ? taskForm(t) : taskReadOnly(t)}
       <div class="section-title"><h3>ログ</h3><button class="btn secondary small" onclick="openLog('${t.id}')">追加</button></div>
       <div class="log-list">${(t.logs||[]).length ? t.logs.map(l=>`<div class="log"><b>${escapeHtml(l.date)} / ${escapeHtml(l.by)} / ${escapeHtml(l.type)}</b><p>${escapeHtml(l.text)}</p></div>`).join("") : `<div class="empty">ログなし</div>`}</div>
     </div>
@@ -1187,7 +1306,24 @@ function openTask(id){
       </div>
     </div>
   </div>`);
-  document.getElementById("saveTask").onclick = () => saveTask(id);
+  if(canEdit) document.getElementById("saveTask").onclick = () => saveTask(id);
+}
+function taskReadOnly(t){
+  return `<div class="panel" style="box-shadow:none">
+    <div class="badges">
+      <span class="badge ${ownerClass(t.owner)}">${escapeHtml(t.owner)}</span>
+      <span class="badge">${escapeHtml(t.start)}〜${escapeHtml(t.due)}</span>
+      <span class="badge">${statusLabels[t.status]}</span>
+      <span class="badge blue">${Number(t.progress || 0)}%</span>
+    </div>
+    <h3>${escapeHtml(t.title)}</h3>
+    <p class="sub">${escapeHtml(t.description || "")}</p>
+    <div class="actions" style="justify-content:flex-start;margin-top:12px">
+      <button class="btn secondary small" onclick="quickProgress('${t.id}',25)">+25%</button>
+      <button class="btn green small" onclick="markDone('${t.id}')">完了</button>
+      <button class="btn secondary small" onclick="openLog('${t.id}')">ログ追加</button>
+    </div>
+  </div>`;
 }
 function taskAiMemo(t){
   const diff = dateDiff(t.due);
@@ -1199,17 +1335,33 @@ function taskAiMemo(t){
 }
 function openLog(id){
   const t = state.tasks.find(x => x.id === id);
+  if(!t || !canTouchTask(t)) return alert("この担当タスクは閲覧できますが、進捗・ログ入力は担当者または管理者のみです。");
   openModal("ログ追加", `<div class="form-grid">
     <label>日付<input id="logDate" type="date" value="${todayISO()}"></label>
-    <label>記入者<select id="logBy">${people.filter(p=>p!=="全員").map(p=>`<option>${p}</option>`).join("")}</select></label>
+    <label>記入者<select id="logBy" ${canManage() ? "" : "disabled"}>${people.filter(p=>p!=="全員").map(p=>`<option ${currentUser===p?"selected":""}>${p}</option>`).join("")}</select></label>
     <label>種類<select id="logType"><option>進捗</option><option>相談</option><option>完了報告</option><option>備品確認</option><option>改善提案</option></select></label>
     <label>進捗更新<input id="logProgress" type="number" min="0" max="100" value="${Number(t.progress||0)}"></label>
     <label class="full">内容<textarea id="logText" placeholder="今日やったこと、止まっている理由、相談内容など"></textarea></label>
     <div class="full actions" style="justify-content:flex-start"><button class="btn green" onclick="saveLog('${id}')">保存</button></div>
   </div>`);
 }
+function saveQuickLogFromDashboard(){
+  const id = document.getElementById("quickTaskId")?.value;
+  const t = state.tasks.find(x => x.id === id);
+  if(!t) return alert("入力するタスクを選んでください");
+  if(!canTouchTask(t)) return alert("この担当タスクは閲覧できますが、進捗・ログ入力は担当者または管理者のみです。");
+  const progress = Math.max(0, Math.min(100, Number(document.getElementById("quickProgressValue")?.value || t.progress || 0)));
+  const text = document.getElementById("quickLogText")?.value.trim() || `現場入力で進捗を${progress}%に更新。`;
+  t.logs = t.logs || [];
+  t.logs.push({date:todayISO(), by:currentUser, type:progress >= 100 ? "完了報告" : "進捗", text});
+  t.progress = progress;
+  t.status = progress >= 100 ? "done" : (t.status === "todo" ? "doing" : t.status);
+  t.updatedAt = todayISO();
+  save();
+}
 function saveLog(id){
   const t = state.tasks.find(x => x.id === id);
+  if(!t || !canTouchTask(t)) return alert("この担当タスクは閲覧できますが、進捗・ログ入力は担当者または管理者のみです。");
   t.logs = t.logs || [];
   const text = document.getElementById("logText").value.trim();
   if(!text) return alert("ログ内容を入力してください");
@@ -1228,23 +1380,27 @@ function saveLog(id){
 }
 function quickProgress(id, amount){
   const t = state.tasks.find(x => x.id === id);
+  if(!t || !canTouchTask(t)) return alert("この担当タスクは閲覧できますが、進捗更新は担当者または管理者のみです。");
   t.progress = Math.min(100, Number(t.progress || 0) + amount);
   t.status = t.progress >= 100 ? "done" : "doing";
   t.updatedAt = todayISO();
   t.logs = t.logs || [];
-  t.logs.push({date:todayISO(), by:"齊藤", type:"進捗", text:`進捗を${t.progress}%に更新。`});
+  t.logs.push({date:todayISO(), by:currentUser, type:"進捗", text:`進捗を${t.progress}%に更新。`});
   save();
 }
 function markDone(id){
   const t = state.tasks.find(x => x.id === id);
+  if(!t || !canTouchTask(t)) return alert("この担当タスクは閲覧できますが、完了登録は担当者または管理者のみです。");
   t.progress = 100;
   t.status = "done";
   t.updatedAt = todayISO();
   t.logs = t.logs || [];
-  t.logs.push({date:todayISO(), by:"齊藤", type:"完了報告", text:"完了として登録。齊藤確認待ち。"});
+  t.logs.push({date:todayISO(), by:currentUser, type:"完了報告", text:"完了として登録。齊藤確認待ち。"});
   save();
 }
 function addAttachment(id){
+  const task = state.tasks.find(x => x.id === id);
+  if(!task || !canTouchTask(task)) return alert("添付は担当者または管理者のみ追加できます。");
   const input = document.getElementById("attachInput");
   const file = input.files[0];
   if(!file) return alert("ファイルを選択してください");
@@ -1301,6 +1457,7 @@ function exportData(){
   URL.revokeObjectURL(url);
 }
 function resetSeed(){
+  if(!canManage()) return requireManager();
   if(!confirm("初期データに戻しますか？現在の入力内容は上書きされます。")) return;
   state = structuredClone(seedData);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
