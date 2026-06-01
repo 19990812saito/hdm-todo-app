@@ -478,6 +478,9 @@ textarea{min-height:88px;resize:vertical}
 
 <script>
 const STORAGE_KEY = "hdm-todo-v1";
+const SUPABASE_URL = "https://rojisasppxraywbfdszo.supabase.co";
+const SUPABASE_KEY = "sb_publishable_Jo6mbRUsR1cb5MqqH2iJ8Q_YbrFAepi";
+const CLOUD_STATE_ID = "main";
 const todayISO = () => new Date().toISOString().slice(0,10);
 const people = ["齊藤","伊江さん","廣瀬さん","全員"];
 const timelinePeople = ["齊藤","伊江さん","廣瀬さん"];
@@ -562,6 +565,8 @@ let state = load();
 let currentView = "dashboard";
 let filters = {owner:"all", status:"all", q:""};
 let selectedMonth = todayISO().slice(0,7);
+let cloudStatus = "ローカル保存";
+let cloudSaveTimer;
 
 function load(){
   const raw = localStorage.getItem(STORAGE_KEY);
@@ -590,6 +595,68 @@ function save(){
   state = normalizeState(state);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   render();
+  queueCloudSave();
+}
+function cloudHeaders(extra = {}){
+  return {
+    apikey: SUPABASE_KEY,
+    Authorization: `Bearer ${SUPABASE_KEY}`,
+    "Content-Type":"application/json",
+    ...extra
+  };
+}
+function cloudEndpoint(path){
+  return `${SUPABASE_URL}/rest/v1/${path}`;
+}
+function setCloudStatus(status){
+  cloudStatus = status;
+  const el = document.getElementById("cloudStatus");
+  if(el) el.textContent = status;
+}
+async function loadCloudState(){
+  setCloudStatus("同期確認中");
+  try{
+    const res = await fetch(cloudEndpoint(`app_state?id=eq.${CLOUD_STATE_ID}&select=data,updated_at`), {
+      headers: cloudHeaders()
+    });
+    if(!res.ok) throw new Error(await res.text());
+    const rows = await res.json();
+    if(rows[0]?.data){
+      state = normalizeState(rows[0].data);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      setCloudStatus("クラウド同期済み");
+      render();
+      return;
+    }
+    await saveCloudState();
+    setCloudStatus("クラウド初期化済み");
+  }catch(error){
+    console.warn("Cloud load failed", error);
+    setCloudStatus("クラウド未接続");
+  }
+}
+function queueCloudSave(){
+  clearTimeout(cloudSaveTimer);
+  cloudSaveTimer = setTimeout(saveCloudState, 500);
+}
+async function saveCloudState(){
+  setCloudStatus("保存中");
+  try{
+    const res = await fetch(cloudEndpoint("app_state?on_conflict=id"), {
+      method:"POST",
+      headers: cloudHeaders({Prefer:"resolution=merge-duplicates,return=minimal"}),
+      body: JSON.stringify({
+        id:CLOUD_STATE_ID,
+        data:state,
+        updated_at:new Date().toISOString()
+      })
+    });
+    if(!res.ok) throw new Error(await res.text());
+    setCloudStatus("クラウド同期済み");
+  }catch(error){
+    console.warn("Cloud save failed", error);
+    setCloudStatus("クラウド保存失敗");
+  }
 }
 function monthLabel(monthKey){
   const [y,m] = monthKey.split("-").map(Number);
@@ -814,6 +881,11 @@ function renderMonthTimeline(){
 function renderDashboard(){
   const urgent = monthTasks().filter(t => t.status !== "done" && dateDiff(t.due) <= 5).sort((a,b)=>a.due.localeCompare(b.due));
   document.getElementById("view-dashboard").innerHTML = `
+    <div class="badges" style="margin-bottom:12px">
+      <span class="badge green" id="cloudStatus">${escapeHtml(cloudStatus)}</span>
+      <span class="badge">公開URL対応</span>
+      <span class="badge">Supabase保存</span>
+    </div>
     <div class="goal-box">
       <div class="goal"><b>年間目標</b><p>${escapeHtml(state.goals.year)}</p></div>
       <div class="goal"><b>${monthLabel(selectedMonth)}目標</b><p>${escapeHtml(currentMonthGoal())}</p></div>
@@ -1147,6 +1219,7 @@ document.getElementById("modal").onclick = e => { if(e.target.id === "modal") cl
 document.getElementById("exportBtn").onclick = exportData;
 document.getElementById("notifyBtn").onclick = requestNotifications;
 render();
+loadCloudState();
 </script>
 </body>
 </html>
