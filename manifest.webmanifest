@@ -1,0 +1,10 @@
+{
+  "name": "HDM ToDoアプリ",
+  "short_name": "HDM ToDo",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#eef3f8",
+  "theme_color": "#10243d",
+  "lang": "ja",
+  "description": "目標から逆算し、担当・期限・進捗・成果ログを管理するHDM向けToDoアプリ"
+}

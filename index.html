@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#10243d">
+<link rel="manifest" href="manifest.webmanifest">
+<title>HDM ToDoアプリ</title>
+<style>
+:root {
+  --ink:#182230;
+  --muted:#657487;
+  --line:#d8e0ea;
+  --paper:#ffffff;
+  --bg:#eef3f8;
+  --navy:#10243d;
+  --blue:#246bfe;
+  --green:#11845b;
+  --amber:#b75e00;
+  --red:#c83131;
+  --cyan:#0f9fb5;
+  --shadow:0 14px 34px rgba(22,34,51,.09);
+  --radius:8px;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{
+  margin:0;
+  color:var(--ink);
+  background:var(--bg);
+  font-family:"Hiragino Sans","Yu Gothic",system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+  letter-spacing:0;
+}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.app{min-height:100vh;display:grid;grid-template-columns:280px 1fr}
+.side{
+  background:var(--navy);
+  color:#fff;
+  padding:22px 18px;
+  position:sticky;
+  top:0;
+  height:100vh;
+  overflow:auto;
+}
+.brand{font-size:12px;color:#7dd3fc;font-weight:800;letter-spacing:1px}
+.side h1{font-size:24px;line-height:1.22;margin:6px 0 18px}
+.nav{display:grid;gap:8px;margin:18px 0}
+.nav button{
+  border:0;
+  border-radius:var(--radius);
+  padding:12px 12px;
+  background:rgba(255,255,255,.08);
+  color:#d7e4f4;
+  text-align:left;
+  font-weight:800;
+}
+.nav button.active{background:#fff;color:var(--navy)}
+.side-card{
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:var(--radius);
+  padding:12px;
+  margin-top:14px;
+  background:rgba(255,255,255,.06);
+}
+.side-card b{display:block;margin-bottom:4px}
+.side-card p{margin:0;color:#cbd8e6;font-size:13px;line-height:1.55}
+.main{padding:22px;min-width:0}
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  gap:16px;
+  align-items:flex-start;
+  margin-bottom:16px;
+}
+.kicker{font-size:12px;color:var(--blue);font-weight:900;letter-spacing:1px}
+h2{font-size:28px;line-height:1.2;margin:3px 0 4px}
+.sub{color:var(--muted);font-size:14px;line-height:1.6}
+.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.btn{
+  border:0;
+  border-radius:var(--radius);
+  padding:10px 13px;
+  background:var(--blue);
+  color:#fff;
+  font-weight:900;
+}
+.btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.btn.green{background:var(--green)}
+.btn.red{background:var(--red)}
+.btn.small{padding:7px 9px;font-size:12px}
+.grid{display:grid;gap:14px}
+.grid.cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.grid.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.panel{
+  background:var(--paper);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:16px;
+}
+.stat .label{color:var(--muted);font-size:12px;font-weight:800}
+.stat .num{font-size:32px;font-weight:950;line-height:1.1;margin-top:6px}
+.stat .note{font-size:12px;color:var(--muted);margin-top:4px}
+.goal-box{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-bottom:14px;
+}
+.goal{
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:13px;
+  background:#f8fbff;
+}
+.goal b{display:block;margin-bottom:5px}
+.goal p{margin:0;color:var(--muted);font-size:13px;line-height:1.55}
+.goal.slim{background:#fff;padding:10px 12px}
+.goal.slim p{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.section-title{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  margin:22px 0 10px;
+}
+.section-title h3{margin:0;font-size:18px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap}
+.toolbar input,.toolbar select{
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:9px 10px;
+  background:#fff;
+  min-width:150px;
+}
+.task-list{display:grid;gap:10px}
+.task{
+  background:#fff;
+  border:1px solid var(--line);
+  border-left:6px solid var(--blue);
+  border-radius:var(--radius);
+  padding:14px;
+  display:grid;
+  gap:10px;
+}
+.task.overdue{border-left-color:var(--red)}
+.task.soon{border-left-color:var(--amber)}
+.task.done{border-left-color:var(--green)}
+.task-head{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:flex-start;
+}
+.task h4{font-size:17px;margin:0 0 4px}
+.task p{margin:0;color:var(--muted);font-size:13px;line-height:1.55}
+.badges{display:flex;gap:6px;flex-wrap:wrap}
+.badge{
+  display:inline-flex;
+  align-items:center;
+  border-radius:999px;
+  padding:4px 8px;
+  font-size:12px;
+  font-weight:900;
+  background:#edf2f7;
+  color:#425466;
+  white-space:nowrap;
+}
+.badge.blue{background:#e7f0ff;color:#1556d6}
+.badge.green{background:#def7eb;color:#087044}
+.badge.amber{background:#fff0d8;color:#9a4c00}
+.badge.red{background:#ffe1e1;color:#a92323}
+.badge.cyan{background:#def8fb;color:#087989}
+.badge.owner-saito{background:#e6f0ff;color:#1556d6}
+.badge.owner-ie{background:#e5f8ef;color:#087044}
+.badge.owner-hirose{background:#fff0d8;color:#9a4c00}
+.badge.owner-all{background:#edf2f7;color:#425466}
+.progress-wrap{display:grid;grid-template-columns:1fr 56px;gap:10px;align-items:center}
+.progress{
+  height:10px;
+  border-radius:999px;
+  background:#e8eef5;
+  overflow:hidden;
+}
+.progress span{display:block;height:100%;background:var(--blue);border-radius:999px}
+.task.done .progress span{background:var(--green)}
+.task-actions{display:flex;gap:7px;flex-wrap:wrap}
+.gantt-panel{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  overflow:hidden;
+}
+.gantt-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:13px 14px;
+  border-bottom:1px solid var(--line);
+  background:#fbfcfe;
+}
+.gantt-head h3{margin:0;font-size:18px}
+.gantt-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.gantt-controls input{
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:8px 9px;
+  background:#fff;
+  font-weight:900;
+}
+.gantt-scroll{overflow:auto}
+.gantt-grid{
+  min-width:1120px;
+  display:grid;
+  grid-template-columns:150px repeat(var(--days), minmax(34px,1fr));
+}
+.gantt-corner,.gantt-day,.gantt-owner,.gantt-cell{
+  border-right:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+}
+.gantt-corner{
+  position:sticky;
+  left:0;
+  z-index:4;
+  background:#f4f7fb;
+  padding:10px;
+  font-weight:950;
+}
+.gantt-day{
+  background:#f4f7fb;
+  min-height:42px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  font-weight:900;
+  color:#263445;
+}
+.gantt-day.today{background:#e7f0ff;color:#1556d6}
+.gantt-owner{
+  position:sticky;
+  left:0;
+  z-index:3;
+  background:#fff;
+  min-height:150px;
+  padding:12px 10px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:6px;
+  font-weight:950;
+  border-left:5px solid var(--owner-color, var(--line));
+}
+.gantt-owner span{color:var(--muted);font-size:12px;font-weight:800}
+.gantt-lane{
+  grid-column:2 / -1;
+  position:relative;
+  min-height:150px;
+  background:
+    repeating-linear-gradient(90deg, transparent 0, transparent calc((100% / var(--days)) - 1px), rgba(216,224,234,.9) calc((100% / var(--days)) - 1px), rgba(216,224,234,.9) calc(100% / var(--days))),
+    #fff;
+  border-bottom:1px solid var(--line);
+}
+.gantt-bar{
+  position:absolute;
+  top:calc(10px + var(--lane) * 26px);
+  left:calc((var(--start) - 1) * (100% / var(--days)) + 3px);
+  width:calc(var(--span) * (100% / var(--days)) - 6px);
+  min-width:42px;
+  height:22px;
+  border-radius:5px;
+  background:var(--owner-color, var(--blue));
+  color:#fff;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:0 8px;
+  font-size:13px;
+  font-weight:950;
+  overflow:hidden;
+  white-space:nowrap;
+  box-shadow:0 4px 12px rgba(24,34,48,.16);
+}
+.gantt-bar.done{background:var(--green)}
+.gantt-bar.blocked,.gantt-bar.overdue{background:var(--red)}
+.gantt-bar.soon{background:var(--amber)}
+.gantt-bar.shared{background:#58677a}
+.gantt-bar b{overflow:hidden;text-overflow:ellipsis}
+.gantt-bar small{opacity:.9;font-weight:900;flex:0 0 auto}
+.gantt-empty{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--muted);
+  font-weight:800;
+}
+.ai-list{display:grid;gap:10px}
+.ai-card{
+  border:1px solid var(--line);
+  border-left:5px solid var(--blue);
+  border-radius:var(--radius);
+  padding:12px;
+  background:#fff;
+}
+.ai-card.danger{border-left-color:var(--red)}
+.ai-card.warn{border-left-color:var(--amber)}
+.ai-card.good{border-left-color:var(--green)}
+.ai-card b{display:block;margin-bottom:4px}
+.ai-card p{margin:0;color:var(--muted);font-size:13px;line-height:1.55}
+.timeline{display:grid;gap:10px}
+.event{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:12px;
+}
+.event b{display:block;margin-bottom:4px}
+.event p{margin:0;color:var(--muted);font-size:13px;line-height:1.55}
+.people{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.person h4{margin:0 0 7px}
+.person-row{display:flex;justify-content:space-between;border-top:1px solid var(--line);padding-top:8px;margin-top:8px;color:var(--muted);font-size:13px}
+.modal-backdrop{
+  position:fixed;
+  inset:0;
+  background:rgba(8,17,30,.62);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:20;
+  padding:16px;
+}
+.modal-backdrop.show{display:flex}
+.modal{
+  width:min(760px,100%);
+  max-height:90vh;
+  overflow:auto;
+  background:#fff;
+  border-radius:var(--radius);
+  box-shadow:0 28px 80px rgba(0,0,0,.28);
+}
+.modal-head{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:center;
+  border-bottom:1px solid var(--line);
+  padding:15px 16px;
+}
+.modal-head h3{margin:0;font-size:20px}
+.modal-body{padding:16px;display:grid;gap:12px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{font-size:12px;font-weight:900;color:var(--muted);display:grid;gap:5px}
+input,select,textarea{
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:10px;
+  background:#fff;
+  color:var(--ink);
+}
+textarea{min-height:88px;resize:vertical}
+.full{grid-column:1/-1}
+.detail-grid{display:grid;grid-template-columns:1fr 320px;gap:14px}
+.log-list{display:grid;gap:8px}
+.log{
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:10px;
+  background:#f9fbfd;
+}
+.log b{font-size:13px}
+.log p{margin:4px 0 0;color:var(--muted);font-size:13px;line-height:1.5}
+.attach-list{display:grid;gap:6px}
+.attach{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:8px;
+  font-size:13px;
+}
+.empty{
+  color:var(--muted);
+  border:1px dashed var(--line);
+  border-radius:var(--radius);
+  padding:20px;
+  text-align:center;
+  background:#fff;
+}
+.mobile-tabs{display:none}
+@media (max-width:900px){
+  .app{display:block}
+  .side{position:relative;height:auto;padding:16px}
+  .nav{display:none}
+  .main{padding:14px}
+  .topbar{display:grid}
+  .actions{justify-content:flex-start}
+  .grid.cols-4,.grid.cols-3,.people,.goal-box,.detail-grid,.form-grid{grid-template-columns:1fr}
+  .gantt-grid{min-width:980px;grid-template-columns:112px repeat(var(--days), minmax(31px,1fr))}
+  .gantt-owner{min-height:136px}
+  .gantt-lane{min-height:136px}
+  .gantt-bar{font-size:12px}
+  .mobile-tabs{
+    display:flex;
+    gap:6px;
+    overflow:auto;
+    padding:10px 0;
+  }
+  .mobile-tabs button{
+    white-space:nowrap;
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:8px 11px;
+    background:#fff;
+    font-weight:900;
+  }
+  .mobile-tabs button.active{background:var(--navy);color:#fff}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">HDM TASK OPS</div>
+    <h1>HDM<br>ToDoアプリ</h1>
+    <div class="nav" id="desktopNav"></div>
+    <div class="side-card">
+      <b>今月の合言葉</b>
+      <p>7月以降に向けて、車両管理・環境整備・安全対策の土台を6月中に整える。</p>
+    </div>
+    <div class="side-card">
+      <b>管理方針</b>
+      <p>目標から逆算し、担当・期限・進捗・成果ログを残す。止まったら早めに相談する。</p>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="mobile-tabs" id="mobileNav"></div>
+    <div class="topbar">
+      <div>
+        <div class="kicker" id="viewKicker">DASHBOARD</div>
+        <h2 id="viewTitle">ダッシュボード</h2>
+        <div class="sub" id="viewSub">目標、進捗、遅延、今日見るべき内容を確認します。</div>
+      </div>
+      <div class="actions">
+        <button class="btn secondary" id="notifyBtn">通知を許可</button>
+        <button class="btn secondary" id="exportBtn">データ出力</button>
+        <button class="btn green" id="newTaskBtn">タスク追加</button>
+      </div>
+    </div>
+
+    <section id="view-dashboard" class="view"></section>
+    <section id="view-tasks" class="view" hidden></section>
+    <section id="view-ai" class="view" hidden></section>
+    <section id="view-people" class="view" hidden></section>
+    <section id="view-timeline" class="view" hidden></section>
+    <section id="view-settings" class="view" hidden></section>
+  </main>
+</div>
+
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modalTitle">タスク</h3>
+      <button class="btn secondary small" id="closeModal">閉じる</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = "hdm-todo-v1";
+const todayISO = () => new Date().toISOString().slice(0,10);
+const people = ["齊藤","伊江さん","廣瀬さん","全員"];
+const timelinePeople = ["齊藤","伊江さん","廣瀬さん"];
+const nameAliases = {
+  "斎藤":"齊藤",
+  "斉藤":"齊藤",
+  "齋藤":"齊藤",
+  "家さん":"伊江さん"
+};
+const ownerMeta = {
+  "齊藤": {className:"owner-saito", color:"#246bfe"},
+  "伊江さん": {className:"owner-ie", color:"#11845b"},
+  "廣瀬さん": {className:"owner-hirose", color:"#b75e00"},
+  "全員": {className:"owner-all", color:"#58677a"}
+};
+const statusLabels = {todo:"未着手", doing:"進行中", blocked:"相談必要", done:"完了"};
+const priorityLabels = {high:"高", normal:"中", low:"低"};
+const views = [
+  ["dashboard","ダッシュボード","DASHBOARD","目標、進捗、遅延、今日見るべき内容を確認します。"],
+  ["tasks","タスク一覧","TASKS","担当・期限・進捗をまとめて確認します。"],
+  ["ai","AI管理","AI MANAGER","遅延・未更新・確認漏れを検知し、次の動きを提案します。"],
+  ["people","担当者別","PEOPLE","齊藤、伊江さん、廣瀬さん、全員タスクを分けて確認します。"],
+  ["timeline","成果ログ","TIMELINE","今日やったこと、相談、完了報告、添付を時系列で残します。"],
+  ["settings","目標設定","GOALS","年間目標・月間目標・重点項目を編集します。"]
+];
+
+const seedData = {
+  goals: {
+    year: "車両管理・補修・美化の仕組みを整え、店舗の運用品質と安全性を上げる。",
+    month: "7月以降に向けて、車両管理・環境整備・安全対策の土台を6月中に整える。",
+    months: {
+      "2026-06": "7月以降に向けて、車両管理・環境整備・安全対策の土台を6月中に整える。"
+    },
+    note: "カレンダーにも詳細スケジュールを登録済み。必ずカレンダーと合わせて確認する。"
+  },
+  tasks: [
+    {
+      id: crypto.randomUUID(), title:"車両傷チェックアプリ 初期傷登録",
+      owner:"全員", due:"2026-06-05", priority:"high", status:"doing", progress:25,
+      start:"2026-06-01",
+      project:"車両管理", description:"6月5日までに初期傷登録を完了。登録しながらバグ・改善点も報告する。",
+      createdAt:"2026-06-01", updatedAt:"2026-06-01", managerCheck:false,
+      logs:[{date:"2026-06-01", by:"齊藤", type:"方針", text:"アプリは作成済み。初期登録とバグ報告を並行して進める。"}],
+      attachments:[]
+    },
+    {
+      id: crypto.randomUUID(), title:"車両傷チェックアプリ 本格運用開始",
+      owner:"全員", due:"2026-06-15", priority:"high", status:"todo", progress:0,
+      start:"2026-06-06",
+      project:"車両管理", description:"6月15日から本格運用。実際に使いながら改善点を出す。",
+      createdAt:"2026-06-01", updatedAt:"2026-06-01", managerCheck:false, logs:[], attachments:[]
+    },
+    {
+      id: crypto.randomUUID(), title:"ヤード・トレーラー環境整備デイ",
+      owner:"廣瀬さん", due:"2026-06-08", priority:"high", status:"todo", progress:0,
+      start:"2026-06-06",
+      project:"環境整備", description:"草刈り、コーン整備、トレーラー清掃、ゴミ・砂除去、コースター清掃。当日の動き方・順番・役割分担も主導する。",
+      createdAt:"2026-06-01", updatedAt:"2026-06-01", managerCheck:false,
+      logs:[{date:"2026-06-01", by:"齊藤", type:"依頼", text:"ただ作業するだけでなく、きれいな状態を保つ方法、効率の良い順番、必要備品まで考えて主導する。"}],
+      attachments:[]
+    },
+    {
+      id: crypto.randomUUID(), title:"LINE管理アプリ 実運用ベータ版作成",
+      owner:"齊藤", due:"2026-06-30", priority:"high", status:"todo", progress:0,
+      start:"2026-06-01",
+      project:"アプリ開発", description:"傷確認URLをお客様へ送る作業を簡略化する。6月中に実運用できるベータ版を作る。",
+      createdAt:"2026-06-01", updatedAt:"2026-06-01", managerCheck:false, logs:[], attachments:[]
+    },
+    {
+      id: crypto.randomUUID(), title:"ガラス撥水コーティング完了",
+      owner:"伊江さん", due:"2026-06-30", priority:"high", status:"todo", progress:0,
+      start:"2026-06-01",
+      project:"安全対策", description:"6月中に必ず完了。作業済み車両を確認し、残り台数を洗車の流れに組み込んで進める。",
+      createdAt:"2026-06-01", updatedAt:"2026-06-01", managerCheck:false,
+      logs:[{date:"2026-06-01", by:"齊藤", type:"依頼", text:"日常の洗車に組み込める流れ、アルバイトさんへの教え方、進捗確認まで主導する。"}],
+      attachments:[]
+    }
+  ]
+};
+
+let state = load();
+let currentView = "dashboard";
+let filters = {owner:"all", status:"all", q:""};
+let selectedMonth = todayISO().slice(0,7);
+
+function load(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(!raw){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(seedData));
+    return structuredClone(seedData);
+  }
+  try { return normalizeState(JSON.parse(raw)); } catch(e) { return structuredClone(seedData); }
+}
+function normalizeState(data){
+  data.goals = data.goals || structuredClone(seedData.goals);
+  data.goals.months = data.goals.months || {};
+  if(data.goals.month && !data.goals.months["2026-06"]) data.goals.months["2026-06"] = data.goals.month;
+  data.tasks = (data.tasks || []).map(t => ({
+    ...t,
+    owner:normalizeName(t.owner),
+    start:t.start || t.createdAt || t.due || todayISO(),
+    logs:(t.logs || []).map(l => ({...l, by:normalizeName(l.by)}))
+  }));
+  return data;
+}
+function normalizeName(name){
+  return nameAliases[name] || name;
+}
+function save(){
+  state = normalizeState(state);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  render();
+}
+function monthLabel(monthKey){
+  const [y,m] = monthKey.split("-").map(Number);
+  return `${y}年${m}月`;
+}
+function daysInMonth(monthKey){
+  const [y,m] = monthKey.split("-").map(Number);
+  return new Date(y, m, 0).getDate();
+}
+function monthBounds(monthKey){
+  const days = daysInMonth(monthKey);
+  return {start:`${monthKey}-01`, end:`${monthKey}-${String(days).padStart(2,"0")}`, days};
+}
+function overlapsMonth(task, monthKey){
+  const bounds = monthBounds(monthKey);
+  const start = task.start || task.createdAt || task.due;
+  return start <= bounds.end && task.due >= bounds.start;
+}
+function monthTasks(monthKey = selectedMonth){
+  return state.tasks.filter(t => overlapsMonth(t, monthKey));
+}
+function currentMonthGoal(){
+  return state.goals.months?.[selectedMonth] || state.goals.month || "";
+}
+function dateDiff(due){
+  const today = new Date(todayISO());
+  const d = new Date(due);
+  return Math.ceil((d - today) / 86400000);
+}
+function statusClass(task){
+  if(task.status === "done") return "done";
+  const diff = dateDiff(task.due);
+  if(diff < 0) return "overdue";
+  if(diff <= 5) return "soon";
+  return "";
+}
+function escapeHtml(str=""){
+  return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s]));
+}
+function ownerClass(owner){
+  return ownerMeta[normalizeName(owner)]?.className || "";
+}
+function ownerColor(owner){
+  return ownerMeta[normalizeName(owner)]?.color || "#246bfe";
+}
+function allLogs(){
+  return state.tasks.flatMap(t => (t.logs || []).map(l => ({...l, task:t.title, owner:t.owner, taskId:t.id})))
+    .sort((a,b) => String(b.date).localeCompare(String(a.date)));
+}
+function calcStats(tasks = state.tasks){
+  const total = tasks.length;
+  const done = tasks.filter(t => t.status === "done").length;
+  const overdue = tasks.filter(t => t.status !== "done" && dateDiff(t.due) < 0).length;
+  const soon = tasks.filter(t => t.status !== "done" && dateDiff(t.due) >= 0 && dateDiff(t.due) <= 5).length;
+  const avg = total ? Math.round(tasks.reduce((sum,t)=>sum + Number(t.progress || 0),0) / total) : 0;
+  return {total, done, overdue, soon, avg};
+}
+function aiInsights(){
+  const insights = [];
+  state.tasks.forEach(t => {
+    const diff = dateDiff(t.due);
+    const lastLog = (t.logs || []).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0];
+    const daysSinceUpdate = Math.ceil((new Date(todayISO()) - new Date(t.updatedAt || t.createdAt || todayISO())) / 86400000);
+    if(t.status !== "done" && diff < 0){
+      insights.push({level:"danger", title:`期限超過: ${t.title}`, text:`担当は${t.owner}。期限を${Math.abs(diff)}日過ぎています。進捗確認と次の一手の報告が必要です。`});
+    } else if(t.status !== "done" && diff <= 5){
+      insights.push({level:"warn", title:`期限まであと${diff}日: ${t.title}`, text:`担当は${t.owner}。現在の進捗は${t.progress}%です。今日できる作業と相談事項をログに残してください。`});
+    }
+    if(t.status !== "done" && daysSinceUpdate >= 3){
+      insights.push({level:"warn", title:`更新が止まっています: ${t.title}`, text:`${daysSinceUpdate}日更新がありません。進んでいない理由、もしくは完了報告を入れてください。`});
+    }
+    if(t.status === "blocked"){
+      insights.push({level:"danger", title:`相談必要: ${t.title}`, text:`担当は${t.owner}。止まっている理由を確認し、齊藤へ判断材料をまとめてください。`});
+    }
+    if(t.status === "done" && !t.managerCheck){
+      insights.push({level:"good", title:`管理者確認待ち: ${t.title}`, text:`完了済みです。齊藤確認が終われば成果ログとして確定できます。`});
+    }
+    if(!lastLog && t.status !== "done"){
+      insights.push({level:"warn", title:`ログ未登録: ${t.title}`, text:`作業したこと、考えたこと、相談したいことを1行でも残すと管理しやすくなります。`});
+    }
+  });
+  if(!insights.length) insights.push({level:"good", title:"大きなアラートはありません", text:"期限と進捗は大きく崩れていません。次は成果ログと添付資料を残していきましょう。"});
+  return insights;
+}
+function renderNav(){
+  const html = views.map(v => `<button class="${currentView===v[0] ? "active" : ""}" data-view="${v[0]}">${v[1]}</button>`).join("");
+  document.getElementById("desktopNav").innerHTML = html;
+  document.getElementById("mobileNav").innerHTML = html;
+  document.querySelectorAll("[data-view]").forEach(btn => btn.onclick = () => setView(btn.dataset.view));
+}
+function setView(view){
+  currentView = view;
+  views.forEach(v => document.getElementById(`view-${v[0]}`).hidden = v[0] !== view);
+  const meta = views.find(v => v[0] === view);
+  document.getElementById("viewKicker").textContent = meta[2];
+  document.getElementById("viewTitle").textContent = meta[1];
+  document.getElementById("viewSub").textContent = meta[3];
+  render();
+}
+function renderStats(){
+  const s = calcStats(monthTasks());
+  return `<div class="grid cols-4">
+    <div class="panel stat"><div class="label">月内タスク</div><div class="num">${s.total}</div><div class="note">${monthLabel(selectedMonth)}の管理対象</div></div>
+    <div class="panel stat"><div class="label">平均進捗</div><div class="num">${s.avg}%</div><div class="note">全体の進み具合</div></div>
+    <div class="panel stat"><div class="label">期限5日以内</div><div class="num">${s.soon}</div><div class="note">今日確認したい項目</div></div>
+    <div class="panel stat"><div class="label">期限超過</div><div class="num">${s.overdue}</div><div class="note">すぐ判断が必要</div></div>
+  </div>`;
+}
+function renderTaskCard(t){
+  const diff = dateDiff(t.due);
+  const dueText = diff < 0 ? `${Math.abs(diff)}日超過` : diff === 0 ? "本日期限" : `あと${diff}日`;
+  const dueBadge = diff < 0 ? "red" : diff <= 5 ? "amber" : "blue";
+  return `<article class="task ${statusClass(t)}">
+    <div class="task-head">
+      <div>
+        <h4>${escapeHtml(t.title)}</h4>
+        <p>${escapeHtml(t.description)}</p>
+      </div>
+      <div class="badges">
+        <span class="badge ${ownerClass(t.owner)}">${escapeHtml(t.owner)}</span>
+        <span class="badge ${dueBadge}">${dueText}</span>
+        <span class="badge">${statusLabels[t.status]}</span>
+      </div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress"><span style="width:${Number(t.progress || 0)}%"></span></div>
+      <b>${Number(t.progress || 0)}%</b>
+    </div>
+    <div class="badges">
+      <span class="badge blue">${escapeHtml(t.project || "未分類")}</span>
+      <span class="badge ${t.priority === "high" ? "red" : t.priority === "normal" ? "amber" : ""}">優先度${priorityLabels[t.priority]}</span>
+      ${t.managerCheck ? `<span class="badge green">齊藤確認済み</span>` : ""}
+      ${(t.attachments || []).length ? `<span class="badge">添付${t.attachments.length}件</span>` : ""}
+    </div>
+    <div class="task-actions">
+      <button class="btn secondary small" onclick="openTask('${t.id}')">詳細</button>
+      <button class="btn secondary small" onclick="quickProgress('${t.id}', 25)">+25%</button>
+      <button class="btn green small" onclick="markDone('${t.id}')">完了</button>
+      <button class="btn secondary small" onclick="openLog('${t.id}')">ログ追加</button>
+    </div>
+  </article>`;
+}
+function filteredTasks(){
+  return state.tasks.filter(t => {
+    const ownerOk = filters.owner === "all" || t.owner === filters.owner;
+    const statusOk = filters.status === "all" || t.status === filters.status;
+    const q = filters.q.trim().toLowerCase();
+    const qOk = !q || `${t.title} ${t.description} ${t.owner} ${t.project}`.toLowerCase().includes(q);
+    return ownerOk && statusOk && qOk;
+  }).sort((a,b) => a.due.localeCompare(b.due));
+}
+function renderTaskList(tasks){
+  if(!tasks.length) return `<div class="empty">表示できるタスクがありません。</div>`;
+  return `<div class="task-list">${tasks.map(renderTaskCard).join("")}</div>`;
+}
+function taskTimelineClass(task, owner){
+  const classes = ["gantt-bar"];
+  if(task.owner === "全員") classes.push("shared");
+  if(task.status === "done") classes.push("done");
+  if(task.status === "blocked") classes.push("blocked");
+  if(task.status !== "done" && dateDiff(task.due) < 0) classes.push("overdue");
+  else if(task.status !== "done" && dateDiff(task.due) <= 5) classes.push("soon");
+  return classes.join(" ");
+}
+function taskTimelineStyle(task, owner, range, index){
+  const colorOwner = task.owner === "全員" ? "全員" : owner;
+  return `--start:${range.startDay};--span:${range.span};--lane:${index};--owner-color:${ownerColor(colorOwner)}`;
+}
+function timelineRange(task, monthKey){
+  const bounds = monthBounds(monthKey);
+  const start = task.start || task.createdAt || task.due;
+  const visibleStart = start < bounds.start ? bounds.start : start;
+  const visibleEnd = task.due > bounds.end ? bounds.end : task.due;
+  const startDay = Number(visibleStart.slice(8,10));
+  const endDay = Number(visibleEnd.slice(8,10));
+  return {startDay, span:Math.max(1, endDay - startDay + 1)};
+}
+function ownerTimelineTasks(owner, monthKey){
+  return monthTasks(monthKey)
+    .filter(t => t.owner === owner || t.owner === "全員")
+    .sort((a,b) => (a.start || a.createdAt || a.due).localeCompare(b.start || b.createdAt || b.due) || a.due.localeCompare(b.due))
+    .slice(0,5);
+}
+function renderMonthTimeline(){
+  const bounds = monthBounds(selectedMonth);
+  const dayHeaders = Array.from({length:bounds.days}, (_,i) => {
+    const day = i + 1;
+    const date = `${selectedMonth}-${String(day).padStart(2,"0")}`;
+    const weekday = "日月火水木金土"[new Date(date).getDay()];
+    return `<div class="gantt-day ${date === todayISO() ? "today" : ""}">${day}<small>(${weekday})</small></div>`;
+  }).join("");
+  const rows = timelinePeople.map(owner => {
+    const tasks = ownerTimelineTasks(owner, selectedMonth);
+    const done = tasks.filter(t => t.status === "done").length;
+    const bars = tasks.map((t, index) => {
+      const range = timelineRange(t, selectedMonth);
+      const label = t.owner === "全員" ? `全員: ${t.title}` : t.title;
+      return `<button class="${taskTimelineClass(t, owner)}" style="${taskTimelineStyle(t, owner, range, index)}" onclick="openTask('${t.id}')" title="${escapeHtml(label)}">
+        <b>${escapeHtml(label)}</b><small>${Number(t.progress || 0)}%</small>
+      </button>`;
+    }).join("");
+    return `<div class="gantt-owner" style="--owner-color:${ownerColor(owner)}">${escapeHtml(owner)}<span>${tasks.length}件 / 完了${done}件</span></div>
+      <div class="gantt-lane">${bars || `<div class="gantt-empty">この月のタスクなし</div>`}</div>`;
+  }).join("");
+  return `<div class="gantt-panel">
+    <div class="gantt-head">
+      <h3>${monthLabel(selectedMonth)} タイムライン</h3>
+      <div class="gantt-controls">
+        <input type="month" id="timelineMonth" value="${selectedMonth}">
+        <button class="btn secondary small" onclick="selectedMonth=todayISO().slice(0,7);render()">今月</button>
+      </div>
+    </div>
+    <div class="gantt-scroll">
+      <div class="gantt-grid" style="--days:${bounds.days}">
+        <div class="gantt-corner">担当</div>
+        ${dayHeaders}
+        ${rows}
+      </div>
+    </div>
+  </div>`;
+}
+function renderDashboard(){
+  const urgent = monthTasks().filter(t => t.status !== "done" && dateDiff(t.due) <= 5).sort((a,b)=>a.due.localeCompare(b.due));
+  document.getElementById("view-dashboard").innerHTML = `
+    <div class="goal-box">
+      <div class="goal"><b>年間目標</b><p>${escapeHtml(state.goals.year)}</p></div>
+      <div class="goal"><b>${monthLabel(selectedMonth)}目標</b><p>${escapeHtml(currentMonthGoal())}</p></div>
+    </div>
+    ${renderMonthTimeline()}
+    ${renderStats()}
+    <div class="section-title"><h3>今日確認すること</h3><button class="btn secondary small" onclick="setView('ai')">AI管理を見る</button></div>
+    <div class="ai-list">${aiInsights().slice(0,4).map(renderAiCard).join("")}</div>
+    <div class="section-title"><h3>期限が近いタスク</h3><button class="btn secondary small" onclick="setView('tasks')">全件を見る</button></div>
+    ${renderTaskList(urgent)}
+  `;
+  document.getElementById("timelineMonth").onchange = e => { selectedMonth = e.target.value; render(); };
+}
+function renderTasks(){
+  document.getElementById("view-tasks").innerHTML = `
+    <div class="panel">
+      <div class="toolbar">
+        <input id="qFilter" placeholder="検索" value="${escapeHtml(filters.q)}">
+        <select id="ownerFilter"><option value="all">全担当</option>${people.map(p=>`<option ${filters.owner===p?"selected":""}>${p}</option>`).join("")}</select>
+        <select id="statusFilter"><option value="all">全ステータス</option>${Object.entries(statusLabels).map(([k,v])=>`<option value="${k}" ${filters.status===k?"selected":""}>${v}</option>`).join("")}</select>
+      </div>
+    </div>
+    <div class="section-title"><h3>タスク一覧</h3><span class="badge">${filteredTasks().length}件</span></div>
+    ${renderTaskList(filteredTasks())}
+  `;
+  document.getElementById("qFilter").oninput = e => { filters.q = e.target.value; renderTasks(); };
+  document.getElementById("ownerFilter").onchange = e => { filters.owner = e.target.value; renderTasks(); };
+  document.getElementById("statusFilter").onchange = e => { filters.status = e.target.value; renderTasks(); };
+}
+function renderAiCard(i){
+  return `<div class="ai-card ${i.level}"><b>${escapeHtml(i.title)}</b><p>${escapeHtml(i.text)}</p></div>`;
+}
+function renderAi(){
+  const report = makeManagerReport();
+  document.getElementById("view-ai").innerHTML = `
+    <div class="grid cols-3">
+      <div class="panel stat"><div class="label">AIアラート</div><div class="num">${aiInsights().length}</div><div class="note">確認対象</div></div>
+      <div class="panel stat"><div class="label">未完了</div><div class="num">${state.tasks.filter(t=>t.status!=="done").length}</div><div class="note">進行中含む</div></div>
+      <div class="panel stat"><div class="label">確認待ち</div><div class="num">${state.tasks.filter(t=>t.status==="done"&&!t.managerCheck).length}</div><div class="note">齊藤確認</div></div>
+    </div>
+    <div class="section-title"><h3>AI管理コメント</h3><button class="btn secondary small" onclick="copyReport()">齊藤向け報告をコピー</button></div>
+    <div class="ai-list">${aiInsights().map(renderAiCard).join("")}</div>
+    <div class="section-title"><h3>齊藤向け報告文</h3></div>
+    <div class="panel"><textarea id="reportText" class="full" style="width:100%;min-height:220px">${escapeHtml(report)}</textarea></div>
+  `;
+}
+function renderPeople(){
+  document.getElementById("view-people").innerHTML = `<div class="people">
+    ${people.filter(p=>p!=="全員").map(p => {
+      const mine = state.tasks.filter(t => t.owner === p || t.owner === "全員");
+      const s = calcStats(mine);
+      return `<div class="panel person">
+        <h4>${p}</h4>
+        <div class="progress-wrap"><div class="progress"><span style="width:${s.avg}%"></span></div><b>${s.avg}%</b></div>
+        <div class="person-row"><span>担当タスク</span><b>${mine.length}</b></div>
+        <div class="person-row"><span>完了</span><b>${s.done}</b></div>
+        <div class="person-row"><span>期限5日以内</span><b>${s.soon}</b></div>
+        <div class="person-row"><span>期限超過</span><b>${s.overdue}</b></div>
+        <button class="btn secondary small" style="margin-top:12px" onclick="filters.owner='${p}';setView('tasks')">この担当を見る</button>
+      </div>`;
+    }).join("")}
+  </div>
+  <div class="section-title"><h3>全員タスク</h3></div>
+  ${renderTaskList(state.tasks.filter(t => t.owner === "全員"))}`;
+}
+function renderTimeline(){
+  const logs = allLogs();
+  document.getElementById("view-timeline").innerHTML = `
+    <div class="section-title"><h3>成果ログ</h3><span class="badge">${logs.length}件</span></div>
+    <div class="timeline">
+      ${logs.length ? logs.map(l => `<div class="event">
+        <b>${escapeHtml(l.date)} / ${escapeHtml(l.by)} / ${escapeHtml(l.type)}</b>
+        <p>${escapeHtml(l.task)}：${escapeHtml(l.text)}</p>
+      </div>`).join("") : `<div class="empty">まだログがありません。</div>`}
+    </div>
+  `;
+}
+function renderSettings(){
+  const monthOptions = Array.from(new Set([selectedMonth, ...Object.keys(state.goals.months || {})])).sort();
+  document.getElementById("view-settings").innerHTML = `
+    <div class="panel">
+      <div class="form-grid">
+        <label class="full">年間目標<textarea id="yearGoal">${escapeHtml(state.goals.year)}</textarea></label>
+        <label>対象月<input id="goalMonth" type="month" value="${selectedMonth}"></label>
+        <label>登録済み月<select id="goalMonthSelect">${monthOptions.map(m=>`<option value="${m}" ${m===selectedMonth?"selected":""}>${monthLabel(m)}</option>`).join("")}</select></label>
+        <label class="full">月間目標<textarea id="monthGoal">${escapeHtml(currentMonthGoal())}</textarea></label>
+        <label class="full">補足<textarea id="goalNote">${escapeHtml(state.goals.note || "")}</textarea></label>
+      </div>
+      <div class="actions" style="margin-top:12px;justify-content:flex-start">
+        <button class="btn green" onclick="saveGoals()">目標を保存</button>
+        <button class="btn secondary" onclick="resetSeed()">初期データに戻す</button>
+      </div>
+    </div>
+  `;
+  document.getElementById("goalMonth").onchange = e => { selectedMonth = e.target.value; renderSettings(); };
+  document.getElementById("goalMonthSelect").onchange = e => { selectedMonth = e.target.value; renderSettings(); };
+}
+function render(){
+  renderNav();
+  if(currentView === "dashboard") renderDashboard();
+  if(currentView === "tasks") renderTasks();
+  if(currentView === "ai") renderAi();
+  if(currentView === "people") renderPeople();
+  if(currentView === "timeline") renderTimeline();
+  if(currentView === "settings") renderSettings();
+}
+function saveGoals(){
+  const goalMonth = document.getElementById("goalMonth").value || selectedMonth;
+  selectedMonth = goalMonth;
+  state.goals.year = document.getElementById("yearGoal").value;
+  state.goals.month = document.getElementById("monthGoal").value;
+  state.goals.months = state.goals.months || {};
+  state.goals.months[goalMonth] = document.getElementById("monthGoal").value;
+  state.goals.note = document.getElementById("goalNote").value;
+  save();
+}
+function openModal(title, html){
+  document.getElementById("modalTitle").textContent = title;
+  document.getElementById("modalBody").innerHTML = html;
+  document.getElementById("modal").classList.add("show");
+}
+function closeModal(){ document.getElementById("modal").classList.remove("show"); }
+function openNewTask(){
+  openModal("タスク追加", taskForm());
+  document.getElementById("saveTask").onclick = () => saveTask();
+}
+function taskForm(t = {}){
+  return `<div class="form-grid">
+    <label>タイトル<input id="taskTitle" value="${escapeHtml(t.title || "")}"></label>
+    <label>担当<select id="taskOwner">${people.map(p=>`<option ${t.owner===p?"selected":""}>${p}</option>`).join("")}</select></label>
+    <label>開始日<input id="taskStart" type="date" value="${t.start || t.createdAt || todayISO()}"></label>
+    <label>期限<input id="taskDue" type="date" value="${t.due || todayISO()}"></label>
+    <label>プロジェクト<input id="taskProject" value="${escapeHtml(t.project || "")}"></label>
+    <label>優先度<select id="taskPriority">${Object.entries(priorityLabels).map(([k,v])=>`<option value="${k}" ${t.priority===k?"selected":""}>${v}</option>`).join("")}</select></label>
+    <label>ステータス<select id="taskStatus">${Object.entries(statusLabels).map(([k,v])=>`<option value="${k}" ${t.status===k?"selected":""}>${v}</option>`).join("")}</select></label>
+    <label>進捗<input id="taskProgress" type="number" min="0" max="100" value="${Number(t.progress || 0)}"></label>
+    <label>齊藤確認<select id="taskCheck"><option value="false">未確認</option><option value="true" ${t.managerCheck?"selected":""}>確認済み</option></select></label>
+    <label class="full">内容<textarea id="taskDescription">${escapeHtml(t.description || "")}</textarea></label>
+    <div class="full actions" style="justify-content:flex-start"><button class="btn green" id="saveTask">保存</button></div>
+  </div>`;
+}
+function saveTask(id){
+  const data = {
+    title: document.getElementById("taskTitle").value.trim(),
+    owner: document.getElementById("taskOwner").value,
+    start: document.getElementById("taskStart").value,
+    due: document.getElementById("taskDue").value,
+    project: document.getElementById("taskProject").value.trim(),
+    priority: document.getElementById("taskPriority").value,
+    status: document.getElementById("taskStatus").value,
+    progress: Math.max(0, Math.min(100, Number(document.getElementById("taskProgress").value || 0))),
+    managerCheck: document.getElementById("taskCheck").value === "true",
+    description: document.getElementById("taskDescription").value.trim(),
+    updatedAt: todayISO()
+  };
+  if(!data.title) return alert("タイトルを入力してください");
+  if(data.start > data.due) return alert("開始日は期限より前にしてください");
+  if(id){
+    state.tasks = state.tasks.map(t => t.id === id ? {...t, ...data} : t);
+  } else {
+    state.tasks.push({id: crypto.randomUUID(), createdAt: todayISO(), logs:[], attachments:[], ...data});
+  }
+  closeModal();
+  save();
+}
+function openTask(id){
+  const t = state.tasks.find(x => x.id === id);
+  if(!t) return;
+  openModal(t.title, `<div class="detail-grid">
+    <div>
+      ${taskForm(t)}
+      <div class="section-title"><h3>ログ</h3><button class="btn secondary small" onclick="openLog('${t.id}')">追加</button></div>
+      <div class="log-list">${(t.logs||[]).length ? t.logs.map(l=>`<div class="log"><b>${escapeHtml(l.date)} / ${escapeHtml(l.by)} / ${escapeHtml(l.type)}</b><p>${escapeHtml(l.text)}</p></div>`).join("") : `<div class="empty">ログなし</div>`}</div>
+    </div>
+    <div>
+      <div class="panel" style="box-shadow:none">
+        <h3 style="margin-top:0">添付</h3>
+        <div class="attach-list">${(t.attachments||[]).length ? t.attachments.map((a,i)=>`<div class="attach"><span>${escapeHtml(a.name)}</span><button class="btn secondary small" onclick="downloadAttachment('${t.id}',${i})">開く</button></div>`).join("") : `<div class="empty">添付なし</div>`}</div>
+        <label style="margin-top:10px">資料・写真<input id="attachInput" type="file"></label>
+        <button class="btn secondary small" style="margin-top:8px" onclick="addAttachment('${t.id}')">添付を保存</button>
+      </div>
+      <div class="panel" style="box-shadow:none;margin-top:12px">
+        <h3 style="margin-top:0">AIメモ</h3>
+        <p class="sub">${escapeHtml(taskAiMemo(t))}</p>
+      </div>
+    </div>
+  </div>`);
+  document.getElementById("saveTask").onclick = () => saveTask(id);
+}
+function taskAiMemo(t){
+  const diff = dateDiff(t.due);
+  if(t.status === "blocked") return "相談必要になっています。止まっている理由、判断してほしい内容、必要備品をログに残してください。";
+  if(t.status === "done" && !t.managerCheck) return "完了済みです。齊藤確認を入れると成果ログとして確定できます。";
+  if(diff < 0) return "期限を超過しています。今日中に現状と完了予定を共有してください。";
+  if(diff <= 5) return `期限まであと${diff}日です。今日進める作業と不明点を明確にしましょう。`;
+  return "順調に進めるため、作業した日は短くてもログを残してください。";
+}
+function openLog(id){
+  const t = state.tasks.find(x => x.id === id);
+  openModal("ログ追加", `<div class="form-grid">
+    <label>日付<input id="logDate" type="date" value="${todayISO()}"></label>
+    <label>記入者<select id="logBy">${people.filter(p=>p!=="全員").map(p=>`<option>${p}</option>`).join("")}</select></label>
+    <label>種類<select id="logType"><option>進捗</option><option>相談</option><option>完了報告</option><option>備品確認</option><option>改善提案</option></select></label>
+    <label>進捗更新<input id="logProgress" type="number" min="0" max="100" value="${Number(t.progress||0)}"></label>
+    <label class="full">内容<textarea id="logText" placeholder="今日やったこと、止まっている理由、相談内容など"></textarea></label>
+    <div class="full actions" style="justify-content:flex-start"><button class="btn green" onclick="saveLog('${id}')">保存</button></div>
+  </div>`);
+}
+function saveLog(id){
+  const t = state.tasks.find(x => x.id === id);
+  t.logs = t.logs || [];
+  const text = document.getElementById("logText").value.trim();
+  if(!text) return alert("ログ内容を入力してください");
+  t.logs.push({
+    date: document.getElementById("logDate").value,
+    by: document.getElementById("logBy").value,
+    type: document.getElementById("logType").value,
+    text
+  });
+  t.progress = Math.max(0, Math.min(100, Number(document.getElementById("logProgress").value || t.progress || 0)));
+  if(t.progress >= 100) t.status = "done";
+  else if(t.status === "todo") t.status = "doing";
+  t.updatedAt = todayISO();
+  closeModal();
+  save();
+}
+function quickProgress(id, amount){
+  const t = state.tasks.find(x => x.id === id);
+  t.progress = Math.min(100, Number(t.progress || 0) + amount);
+  t.status = t.progress >= 100 ? "done" : "doing";
+  t.updatedAt = todayISO();
+  t.logs = t.logs || [];
+  t.logs.push({date:todayISO(), by:"齊藤", type:"進捗", text:`進捗を${t.progress}%に更新。`});
+  save();
+}
+function markDone(id){
+  const t = state.tasks.find(x => x.id === id);
+  t.progress = 100;
+  t.status = "done";
+  t.updatedAt = todayISO();
+  t.logs = t.logs || [];
+  t.logs.push({date:todayISO(), by:"齊藤", type:"完了報告", text:"完了として登録。齊藤確認待ち。"});
+  save();
+}
+function addAttachment(id){
+  const input = document.getElementById("attachInput");
+  const file = input.files[0];
+  if(!file) return alert("ファイルを選択してください");
+  const reader = new FileReader();
+  reader.onload = () => {
+    const t = state.tasks.find(x => x.id === id);
+    t.attachments = t.attachments || [];
+    t.attachments.push({name:file.name, type:file.type, data:reader.result, addedAt:todayISO()});
+    t.updatedAt = todayISO();
+    t.logs = t.logs || [];
+    t.logs.push({date:todayISO(), by:"齊藤", type:"添付", text:`${file.name} を添付。`});
+    save();
+    openTask(id);
+  };
+  reader.readAsDataURL(file);
+}
+function downloadAttachment(id, index){
+  const t = state.tasks.find(x => x.id === id);
+  const a = t.attachments[index];
+  const link = document.createElement("a");
+  link.href = a.data;
+  link.download = a.name;
+  link.target = "_blank";
+  link.click();
+}
+function makeManagerReport(){
+  const s = calcStats();
+  const lines = [
+    "【HDM ToDo 進捗レポート】",
+    `全体進捗: ${s.avg}% / 完了: ${s.done}/${s.total}件 / 期限5日以内: ${s.soon}件 / 期限超過: ${s.overdue}件`,
+    "",
+    "■ 確認が必要な内容"
+  ];
+  aiInsights().slice(0,8).forEach(i => lines.push(`・${i.title} - ${i.text}`));
+  lines.push("", "■ 担当別");
+  people.filter(p=>p!=="全員").forEach(p => {
+    const mine = state.tasks.filter(t => t.owner === p || t.owner === "全員");
+    const ps = calcStats(mine);
+    lines.push(`・${p}: 平均進捗${ps.avg}% / 完了${ps.done}/${ps.total}件`);
+  });
+  return lines.join("\n");
+}
+function copyReport(){
+  const text = document.getElementById("reportText")?.value || makeManagerReport();
+  navigator.clipboard.writeText(text).then(()=>alert("報告文をコピーしました"));
+}
+function exportData(){
+  const blob = new Blob([JSON.stringify(state,null,2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `hdm-todo-${todayISO()}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+function resetSeed(){
+  if(!confirm("初期データに戻しますか？現在の入力内容は上書きされます。")) return;
+  state = structuredClone(seedData);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  render();
+}
+function requestNotifications(){
+  if(!("Notification" in window)) return alert("このブラウザは通知に対応していません");
+  Notification.requestPermission().then(result => {
+    if(result === "granted"){
+      new Notification("HDM ToDoアプリ", {body:"通知が有効になりました。期限前アラートの土台ができています。"});
+      notifyUrgentTasks();
+    }
+  });
+}
+function notifyUrgentTasks(){
+  if(!("Notification" in window) || Notification.permission !== "granted") return;
+  const urgent = state.tasks.filter(t => t.status !== "done" && dateDiff(t.due) <= 5);
+  if(!urgent.length) return;
+  const worst = urgent.sort((a,b)=>dateDiff(a.due)-dateDiff(b.due))[0];
+  const diff = dateDiff(worst.due);
+  const body = diff < 0 ? `${worst.owner}担当「${worst.title}」が期限超過です。` : `${worst.owner}担当「${worst.title}」は期限まであと${diff}日です。`;
+  new Notification("期限アラート", {body});
+}
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+document.getElementById("newTaskBtn").onclick = openNewTask;
+document.getElementById("closeModal").onclick = closeModal;
+document.getElementById("modal").onclick = e => { if(e.target.id === "modal") closeModal(); };
+document.getElementById("exportBtn").onclick = exportData;
+document.getElementById("notifyBtn").onclick = requestNotifications;
+render();
+</script>
+</body>
+</html>
