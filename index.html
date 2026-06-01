@@ -621,8 +621,9 @@ async function loadCloudState(){
     });
     if(!res.ok) throw new Error(await res.text());
     const rows = await res.json();
-    if(rows[0]?.data){
-      state = normalizeState(rows[0].data);
+    const cloudData = rows[0]?.data;
+    if(cloudData?.goals && Array.isArray(cloudData?.tasks)){
+      state = normalizeState(cloudData);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       setCloudStatus("クラウド同期済み");
       render();
