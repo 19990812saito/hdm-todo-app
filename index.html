@@ -67,6 +67,16 @@ button{cursor:pointer}
 }
 .side-card b{display:block;margin-bottom:4px}
 .side-card p{margin:0;color:#cbd8e6;font-size:13px;line-height:1.55}
+.app-version{
+  display:inline-flex;
+  margin-top:12px;
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:999px;
+  padding:5px 8px;
+  color:#cbd8e6;
+  font-size:12px;
+  font-weight:900;
+}
 .main{padding:22px;min-width:0}
 .topbar{
   display:flex;
@@ -486,6 +496,7 @@ textarea{min-height:88px;resize:vertical}
   <aside class="side">
     <div class="brand">HDM TASK OPS</div>
     <h1>HDM<br>ToDoアプリ</h1>
+    <div class="app-version" id="appVersionLabel"></div>
     <div class="nav" id="desktopNav"></div>
     <div class="side-card">
       <b>今月の合言葉</b>
@@ -533,6 +544,8 @@ textarea{min-height:88px;resize:vertical}
 
 <script>
 const STORAGE_KEY = "hdm-todo-v1";
+const APP_VERSION = "v0.4.1";
+const APP_RELEASE_DATE = "2026-06-01";
 const SUPABASE_URL = "https://rojisasppxraywbfdszo.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Jo6mbRUsR1cb5MqqH2iJ8Q_YbrFAepi";
 const CLOUD_STATE_ID = "main";
@@ -637,12 +650,17 @@ function normalizeState(data){
   data.goals = data.goals || structuredClone(seedData.goals);
   data.goals.months = data.goals.months || {};
   if(data.goals.month && !data.goals.months["2026-06"]) data.goals.months["2026-06"] = data.goals.month;
-  data.tasks = (data.tasks || []).map(t => ({
-    ...t,
-    owner:normalizeName(t.owner),
-    start:t.start || t.createdAt || t.due || todayISO(),
-    logs:(t.logs || []).map(l => ({...l, by:normalizeName(l.by)}))
-  }));
+  data.tasks = (data.tasks || []).map(t => {
+    const due = t.due || t.dueDate || t.endDate || t.deadline || todayISO();
+    const start = t.start || t.startDate || t.createdAt || due || todayISO();
+    return {
+      ...t,
+      owner:normalizeName(t.owner),
+      start,
+      due,
+      logs:(t.logs || []).map(l => ({...l, by:normalizeName(l.by)}))
+    };
+  });
   return data;
 }
 function normalizeName(name){
@@ -978,6 +996,7 @@ function renderDashboard(){
       <span class="badge green" id="cloudStatus">${escapeHtml(cloudStatus)}</span>
       <span class="badge">公開URL対応</span>
       <span class="badge">Supabase保存</span>
+      <span class="badge blue">${APP_VERSION}</span>
     </div>
     <div class="goal-box">
       <div class="goal"><b>年間目標</b><p>${escapeHtml(state.goals.year)}</p></div>
@@ -1078,6 +1097,8 @@ function renderSettings(){
 }
 function render(){
   renderNav();
+  const versionEl = document.getElementById("appVersionLabel");
+  if(versionEl) versionEl.textContent = `${APP_VERSION} / ${APP_RELEASE_DATE}`;
   if(currentView === "dashboard") renderDashboard();
   if(currentView === "tasks") renderTasks();
   if(currentView === "ai") renderAi();
@@ -1285,10 +1306,35 @@ function resetSeed(){
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   render();
 }
+function notificationSupportInfo(){
+  const ua = navigator.userAgent || "";
+  const isiOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const isStandalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  if(!("Notification" in window)) return {supported:false, label:"PC通知のみ"};
+  if(isiOS && !isStandalone) return {supported:false, label:"PC通知のみ"};
+  return {supported:true, label:Notification.permission === "granted" ? "通知ON" : "通知を許可"};
+}
+function refreshNotificationButton(){
+  const btn = document.getElementById("notifyBtn");
+  if(!btn) return;
+  const info = notificationSupportInfo();
+  btn.textContent = info.label;
+  btn.title = info.supported ? "期限前アラートの通知を許可します" : "モバイルブラウザ通知は未対応です。PC通知を先に使います。";
+}
 function requestNotifications(){
-  if(!("Notification" in window)) return alert("このブラウザは通知に対応していません");
+  const info = notificationSupportInfo();
+  if(!("Notification" in window)){
+    return alert("このブラウザは通知に対応していません。現在はPCブラウザ通知を優先対応にして、モバイル通知はPWA化・ログイン後の段階で整えます。");
+  }
+  const ua = navigator.userAgent || "";
+  const isiOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const isStandalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  if(!info.supported || (isiOS && !isStandalone)){
+    return alert("iPhoneのブラウザ表示では通知が制限されています。ホーム画面に追加したPWA版で対応する段階まで、モバイル通知は未対応として扱います。");
+  }
   Notification.requestPermission().then(result => {
     if(result === "granted"){
+      refreshNotificationButton();
       new Notification("HDM ToDoアプリ", {body:"通知が有効になりました。期限前アラートの土台ができています。"});
       notifyUrgentTasks();
     }
@@ -1311,6 +1357,7 @@ document.getElementById("closeModal").onclick = closeModal;
 document.getElementById("modal").onclick = e => { if(e.target.id === "modal") closeModal(); };
 document.getElementById("exportBtn").onclick = exportData;
 document.getElementById("notifyBtn").onclick = requestNotifications;
+refreshNotificationButton();
 render();
 loadCloudState();
 setInterval(pollCloudState, 10000);
