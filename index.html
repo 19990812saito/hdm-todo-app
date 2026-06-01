@@ -481,6 +481,7 @@ const STORAGE_KEY = "hdm-todo-v1";
 const SUPABASE_URL = "https://rojisasppxraywbfdszo.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Jo6mbRUsR1cb5MqqH2iJ8Q_YbrFAepi";
 const CLOUD_STATE_ID = "main";
+const IS_FILE_ORIGIN = location.protocol === "file:";
 const todayISO = () => new Date().toISOString().slice(0,10);
 const people = ["齊藤","伊江さん","廣瀬さん","全員"];
 const timelinePeople = ["齊藤","伊江さん","廣瀬さん"];
@@ -565,8 +566,9 @@ let state = load();
 let currentView = "dashboard";
 let filters = {owner:"all", status:"all", q:""};
 let selectedMonth = todayISO().slice(0,7);
-let cloudStatus = "ローカル保存";
+let cloudStatus = IS_FILE_ORIGIN ? "公開URLで同期" : "ローカル保存";
 let cloudSaveTimer;
+let lastCloudUpdatedAt = "";
 
 function load(){
   const raw = localStorage.getItem(STORAGE_KEY);
@@ -614,6 +616,10 @@ function setCloudStatus(status){
   if(el) el.textContent = status;
 }
 async function loadCloudState(){
+  if(IS_FILE_ORIGIN){
+    setCloudStatus("公開URLで同期");
+    return;
+  }
   setCloudStatus("同期確認中");
   try{
     const res = await fetch(cloudEndpoint(`app_state?id=eq.${CLOUD_STATE_ID}&select=data,updated_at`), {
@@ -622,6 +628,7 @@ async function loadCloudState(){
     if(!res.ok) throw new Error(await res.text());
     const rows = await res.json();
     const cloudData = rows[0]?.data;
+    lastCloudUpdatedAt = rows[0]?.updated_at || lastCloudUpdatedAt;
     if(cloudData?.goals && Array.isArray(cloudData?.tasks)){
       state = normalizeState(cloudData);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -637,10 +644,18 @@ async function loadCloudState(){
   }
 }
 function queueCloudSave(){
+  if(IS_FILE_ORIGIN){
+    setCloudStatus("公開URLで同期");
+    return;
+  }
   clearTimeout(cloudSaveTimer);
   cloudSaveTimer = setTimeout(saveCloudState, 500);
 }
 async function saveCloudState(){
+  if(IS_FILE_ORIGIN){
+    setCloudStatus("公開URLで同期");
+    return;
+  }
   setCloudStatus("保存中");
   try{
     const res = await fetch(cloudEndpoint("app_state?on_conflict=id"), {
@@ -653,10 +668,32 @@ async function saveCloudState(){
       })
     });
     if(!res.ok) throw new Error(await res.text());
+    lastCloudUpdatedAt = new Date().toISOString();
     setCloudStatus("クラウド同期済み");
   }catch(error){
     console.warn("Cloud save failed", error);
     setCloudStatus("クラウド保存失敗");
+  }
+}
+async function pollCloudState(){
+  if(IS_FILE_ORIGIN || document.hidden) return;
+  try{
+    const res = await fetch(cloudEndpoint(`app_state?id=eq.${CLOUD_STATE_ID}&select=data,updated_at`), {
+      headers: cloudHeaders()
+    });
+    if(!res.ok) throw new Error(await res.text());
+    const rows = await res.json();
+    const remoteUpdatedAt = rows[0]?.updated_at || "";
+    const cloudData = rows[0]?.data;
+    if(remoteUpdatedAt && remoteUpdatedAt !== lastCloudUpdatedAt && cloudData?.goals && Array.isArray(cloudData?.tasks)){
+      lastCloudUpdatedAt = remoteUpdatedAt;
+      state = normalizeState(cloudData);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      setCloudStatus("クラウド同期済み");
+      render();
+    }
+  }catch(error){
+    console.warn("Cloud poll failed", error);
   }
 }
 function monthLabel(monthKey){
@@ -1221,6 +1258,7 @@ document.getElementById("exportBtn").onclick = exportData;
 document.getElementById("notifyBtn").onclick = requestNotifications;
 render();
 loadCloudState();
+setInterval(pollCloudState, 10000);
 </script>
 </body>
 </html>
