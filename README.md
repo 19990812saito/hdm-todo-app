@@ -9,6 +9,7 @@
 ## 共有資料
 
 - [HDM ToDoアプリ 仕様書](docs/HDM_ToDoアプリ_仕様書.md)
+- [NotebookLM用 スライド作成資料](docs/notebooklm/04_NotebookLMへの指示文.md)
 
 ## 初期機能
 
